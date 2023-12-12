@@ -1,0 +1,22 @@
+node{
+    stage('code checkout'){
+        git 'https://github.com/ajjurathod/banking-project.git'
+    }
+    stage('building the code'){
+        sh 'mvn clean package'
+    }
+    stage('containerizing the packge'){
+        sh 'docker build -t ajjurathod1998/finance-me:1.0'
+        
+    }
+    stage('pushing the package into docker'){
+        withCredentials([string(credentialsId: 'dockerhub', variable: 'dockerHubPwd')]) {
+        sh "docker login -u ajjurathod1998 -p ${dockerHubPwd}"
+        sh "docker push ajjurathod1998/finance-me:1.0"
+      }
+    }
+    stage('dploying it to server'){
+        ansiblePlaybook become: true, credentialsId: 'ansible', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'configure-test-server.yml', vaultTmpPath: ''
+    }
+    
+}
